@@ -11,8 +11,8 @@ library(caret)
 # reading file from feature_engineering script
 db<-read.csv("sample_100.csv")
 # reading files from RapidMiner analysis
-db2<-read.csv("sample_05_SOM.csv")
-db3<-read.csv("sample_05_cluster.csv")
+db2<-read.csv("sample_100_SOM.csv")
+db3<-read.csv("sample_100_cluster.csv")
 # empty vector
 tots<-c()
 # ensuring reproducibility

@@ -11,10 +11,11 @@ library(caret)
 # reading file from feature_engineering script
 db<-read.csv("sample_100.csv")
 # reading files from RapidMiner analysis
-df2<-read.csv("Downloads/sample_05_SOM.csv")
-df3<-read.csv("Downloads/sample_05_cluster.csv")
+df2<-read.csv("sample_05_SOM.csv")
+df3<-read.csv("sample_05_cluster.csv")
 # empty vector
 tots<-c()
+# ensuring reproducibility
 set.seed(1234)
 for(i in 1:10){
   cluster<-select(df2,contains('SOM')) %>%

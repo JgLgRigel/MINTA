@@ -141,6 +141,7 @@ db6<-db5 %>%
 set.seed(1234)
 sample_vector<-runif(dim(db6)[1])
 # output file to be use in RapidMiner
-write.table(db6,"Downloads/sample_100.csv",na="",sep=",",row.names=F)
+write.table(db6,"sample_100.csv",na="",sep=",",row.names=F)
+# smaller sample to quick analysis if requested
 db6[sample_vector>=0.995,] %>%
-  write.table("Downloads/sample_05.csv",na="",sep=",",row.names=F)
+  write.table("sample_05.csv",na="",sep=",",row.names=F)

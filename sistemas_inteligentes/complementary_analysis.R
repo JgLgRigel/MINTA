@@ -11,14 +11,14 @@ library(caret)
 # reading file from feature_engineering script
 db<-read.csv("sample_100.csv")
 # reading files from RapidMiner analysis
-df2<-read.csv("sample_05_SOM.csv")
-df3<-read.csv("sample_05_cluster.csv")
+db2<-read.csv("sample_05_SOM.csv")
+db3<-read.csv("sample_05_cluster.csv")
 # empty vector
 tots<-c()
 # ensuring reproducibility
 set.seed(1234)
 for(i in 1:10){
-  cluster<-select(df2,contains('SOM')) %>%
+  cluster<-select(db2,contains('SOM')) %>%
     kmeans(i)
   tots<-c(tots,cluster$tot.withinss)
 }
@@ -28,13 +28,13 @@ plot(tots,type="b",xlab='Number of Clusters',
      main='Distance Evolution Within Clusters')
 abline(h=tots[5],lty=2)
 # clusters visualization tool
-df3 %>%
+db3 %>%
   group_by(SOM_0,SOM_1,cluster) %>%
   summarize(freq=n()) %>% 
   ggplot(aes(x=SOM_0,y=SOM_1,color=cluster,size=freq)) + geom_point(alpha=0.7)
 # clusters characterization
-df4<-merge(df,df3,by='row_id',sort=F)
-df4 %>%
+db4<-merge(db,db3,by='row_id',sort=F)
+db4 %>%
   group_by(cluster) %>%
   summarize(pro_viaje=mean(viaje),valor_promedio=mean(valor),total_valor=sum(valor),
             tiempo_segundos_m1=mean(tiempo_segundos_m1),
@@ -46,7 +46,7 @@ df4 %>%
   data.frame()
 # ensuring reproducibility
 set.seed(1234)
-expert_sample<-createDataPartition(df4$cluster,p=100/dim(df4)[1],list=F)
+expert_sample<-createDataPartition(db4$cluster,p=100/dim(df4)[1],list=F)
 #creating file to expert validation
-df5<-df4[expert_sample,] %>%
+db4[expert_sample,] %>%
   write.table("Downloads/expert_sample.csv",sep=",",row.names=F)

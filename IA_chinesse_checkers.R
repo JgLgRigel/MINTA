@@ -1,7 +1,15 @@
+-------------------------------------------------------------------------------
+  # Master of Science in Artificial Intelligence
+  # Authors: Guillermo López
+  # Date: 2020, November 3rd
+------------------------------------------------------------------------------
+
 chinese_checkers<-function(){
   #############################################################################
   ################################# FUNCTIONS #################################
   #############################################################################
+  
+  # ... to find whether the cell between is empty or not
   long_step_matrix <- function(x,y,state){
     ls <- matrix(1,nrow=length(x),ncol=length(x))
     for(i in 1:length(x)){
@@ -14,6 +22,8 @@ chinese_checkers<-function(){
     }
     return(ls)
   }
+  
+  # ... to recalculate distance matrix taking into acount restrictions and long steps.
   distance_matrix <- function(dist,state,ls,player){ 
     a <- state==player | state=='black'
     a_m <- matrix(0,nrow=length(state),ncol=length(state))
@@ -26,6 +36,8 @@ chinese_checkers<-function(){
     final_dist <- ifelse(final_dist<=sqrt(5) & final_dist>0,final_dist,Inf)
     return(final_dist)
   }
+  
+  # ... to calculate minimal distance between cells
   floyd_warshall <- function(dist){
     n <- nrow(dist)
     for(i in 1:n){
@@ -39,6 +51,8 @@ chinese_checkers<-function(){
     }
     return(dist)
   }
+  
+  # ... provided play coordinates to validate if the play is legal
   validate_play <- function(coord,player,dist){
     c_ori <- cell[x==coord[1] & y==coord[2]]
     c_des <- cell[x==coord[3] & y==coord[4]]
@@ -57,10 +71,12 @@ chinese_checkers<-function(){
     }
     return(val)
   }
+  
+  # ... artificial intelligence that select the best possible plays using random Lévy flights
   cuckoo_search<-function(x,y,cell,state,target,turn,player,dist,n=1000,v=20,p_rate=0.5){
-    # n: cantidad de nidos
-    # v: número de vuelos
-    # p: probabilidad deserción de nido
+    # n: nests quantity
+    # v: number of random flights
+    # p: desertion odds
     g_pla <- c('green','yellow','orange','red','purple','blue')
     g_x <- c(0,-12,-12,0,12,12)
     g_y <- c(-16,-8,8,16,8,-8)
@@ -111,18 +127,23 @@ chinese_checkers<-function(){
     best_play <- nests_coor[which.max(f_obj),]
     return(best_play)
   }
+  
+  # ... to plot the current state of the board
   plot_tabletop<-function(x,y,state){
     par(pin=c(3.5,3.5))
     plot(x,y,col=state,pch=20,cex=3,xlab=NULL,ylab=NULL)
     abline(h=seq(-16,16,2),lty=2,col='lightgray')
     abline(v=seq(-12,12),lty=2,col='lightgray')
   }
+  
   #############################################################################
   ########################## INITIALIZING THE BOARD ###########################
   #############################################################################
+  # chinesse checkers board has 121 cells
   cell<-seq(1:121)
   low_index<-c(0,-1,-2,-3,-12,-11,-10,-9,-8,-9,-10,-11,-12,-3,-2,-1,0)
   up_index<--low_index
+  # horizontal tabletop coordinates
   x<-c()
   for(i in 1:length(low_index)){
     x<-c(x,seq(low_index[i],up_index[i],2))
@@ -130,21 +151,25 @@ chinese_checkers<-function(){
   rm(low_index,up_index)
   index<-seq(16,-16,-2)
   times<-c(1,2,3,4,13,12,11,10,9,10,11,12,13,4,3,2,1)
+  # vertical tabletop coordinates
   y<-c()
   for(i in 1:length(index)){
     y<-c(y,rep(index[i],times[i]))
   }
   rm(index,times)
+  # initial cells state
   state<-c(rep('green',10),rep('blue',4),rep('black',5),rep('yellow',4),rep('blue',3),
            rep('black',6),rep('yellow',3),rep('blue',2),rep('black',7),rep('yellow',2),'blue',
            rep('black',8),'yellow',rep('black',9),'purple',rep('black',8),'orange',rep('purple',2),
            rep('black',7),rep('orange',2),rep('purple',3),rep('black',6),rep('orange',3),
            rep('purple',4),rep('black',5),rep('orange',4),rep('red',10))
+  # game finishes when all cells reach target color
   target<-c(rep('red',10),rep('orange',4),rep('blank',5),rep('purple',4),rep('orange',3),
            rep('blank',6),rep('purple',3),rep('orange',2),rep('blank',7),rep('purple',2),'orange',
            rep('blank',8),'purple',rep('blank',9),'yellow',rep('blank',8),'blue',rep('yellow',2),
            rep('blank',7),rep('blue',2),rep('yellow',3),rep('blank',6),rep('blue',3),
            rep('yellow',4),rep('blank',5),rep('blue',4),rep('green',10))
+  # simple distances matrix
   dist <- matrix(0,nrow=length(x),ncol=length(x))
   for(i in 1:length(x)){
     for(j in 1:length(x)){
@@ -153,11 +178,11 @@ chinese_checkers<-function(){
       dist[i,j] <- sqrt(x_d+y_d)
     }
   }
+  active_players<-c('green','yellow','orange','red','purple','blue')
   #############################################################################
   ################################# PLAYING ###################################
   #############################################################################
   plot_tabletop(x,y,state)
-  active_players<-c('green','yellow','orange','red','purple','blue')
   log <- c()
   turn <- 0
   movement <- 0
@@ -172,17 +197,22 @@ chinese_checkers<-function(){
       coord <- cuckoo_search(x,y,cell,state,target,turn,player,min_distance)
       val <- validate_play(coord,player,min_distance)
       if(val=='valid play'){
+        # storing game log
+        log <- c(log,turn,movement,state,coord)
+        # changing tabletop status according to given play
         state[x==coord[1] & y==coord[2]] <- 'black'
         state[x==coord[3] & y==coord[4]] <- player
         plot_tabletop(x,y,state)
       }else{
-        print(paste(movement,val))
+        print(val)
       }
+      # checking if an active player won in this turn
       if(min(state[state==player]==target[state==player])==1){
         active_players <- active_players[active_players!=player]
         n_active <- length(active_players)
-        print(paste('Congratulation',player,turn))
+        print(paste('Congratulations!',player,turn))
       }
     }
   }
+  log <- matrix(log,ncol=127,byrow=T)
 }

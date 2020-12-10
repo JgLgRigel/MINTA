@@ -1,21 +1,17 @@
----
-title: "Sistemas Inteligentes - Algoritmos Genéticos"
-output: html_notebook
----
+-------------------------------------------------------------------------------
+  # Master of Science in Artificial Intelligence
+  # Authors: Guillermo López
+  # Date: 2020, November 3rd
+------------------------------------------------------------------------------
 
-## Pre-processing
-Required libraries
-```{r}
+# Required libraries
 library(dplyr)
-```
 
-Loading information. Should exists a sample_100.csv file created by the code <...>
-```{r}
+# Loading information. Should exists a sample_100.csv file created by the code <...>
 db<-read.csv('sample_100.csv')
 head(db)
-```
-Data should be normalized to improve the k-means preformance. Mostly of our variables are boolean, although, there are three of them which are continuos: time in seconds and distance in kilometers.
-```{r}
+
+# Data should be normalized to improve the k-means preformance. Mostly of our variables are boolean, although, there are three of them which are continuos: time in seconds and distance in kilometers.
 variables_to_normalize <- names(select(db,contains('viaje')|contains('valor')|
                                          contains('tiempo_')|contains('distancia_')))
 db2 <- db
@@ -25,28 +21,16 @@ for(i in variables_to_normalize){
   max_D[i] <- max(db2[i],na.rm = T)
   dif_D[i] <- max_D[i] - min_D[i]
   db2[i] <- (db2[i]-min_D[i])/dif_D[i]
-}
-head(db2)
-```
-Temporal chunk of code to create a sample db, easier to test:
-```{r}
-sample_vector<-runif(nrow(db2))
-db3<-db2[sample_vector<0.005,]
-dim(db3)
-```
 
-Defining function to create an individual with k random centroids:
-```{r}
+# Defining function to create an individual with k random centroids:
 create_centroids <- function(k,db){
   db_names<-names(db)
   m <- length(db_names)
   centroids <- matrix(runif(m*k),nrow=k,ncol=m)
   return(centroids)
 }
-```
 
-Function to create an initial population with p individuals of k random centroids:
-```{r}
+# Function to create an initial population with p individuals of k random centroids:
 create_population<-function(p,k,db){
   population <- vector('list',p)
   for(i in 1:p){
@@ -54,10 +38,8 @@ create_population<-function(p,k,db){
   }
   return(population)
 }
-```
 
-Defining function to calculate intra-cluster distance:
-```{r}
+# Defining function to calculate intra-cluster distance:
 inter_cluster_distance <- function(centroids){
   k <- nrow(centroids)
   inter_cluster <- matrix(Inf,nrow=k,ncol=k)
@@ -72,10 +54,8 @@ inter_cluster_distance <- function(centroids){
   }
   return(inter_cluster)
 }
-```
 
-Defining function to calculate intra-cluster distance:
-```{r}
+# Defining function to calculate intra-cluster distance:
 intra_cluster_distance <- function(db,centroids){
   db <- data.matrix(db)
   centroids <- data.matrix(centroids)
@@ -101,20 +81,16 @@ intra_cluster_distance <- function(db,centroids){
   intra_cluster <- list(cluster=cluster,distance=distance,intra=intra,intra_matrix=intra_matrix)
   return(intra_cluster)
 }
-```
 
-function to calculate Davies-Bouldin index
-```{r}
+# function to calculate Davies-Bouldin index
 davies_bouldin<-function(inter,intra){
   D_matrix <- intra$intra_matrix/inter
   D_max <- apply(D_matrix,1,max)
   db_index <- mean(D_max)
   return(db_index)
 }
-```
 
-function to update a selection matrix which include the fitness function and the odd to be selected
-```{r}
+# function to update a selection matrix which include the fitness function and the odd to be selected
 update_selection_matrix<-function(db,population,p,k){
   selection_matrix <- matrix(nrow=p,ncol=5)
   for(i in 1:p){
@@ -128,10 +104,8 @@ update_selection_matrix<-function(db,population,p,k){
   selection_matrix[,5] <- selection_matrix[,4]
   return(selection_matrix)
 }
-```
 
-Genetic algorithm
-```{r}
+# Genetic algorithm
 genetic_algorithm<-function(db,k,p,gen,fm){
   m <- ncol(db)
   # create initial population
@@ -181,9 +155,8 @@ genetic_algorithm<-function(db,k,p,gen,fm){
   output<-list(evolution=evolution,best_subject=best_subject,intra=intra,inter=inter)
   return(output)
 }
-```
 
-```{r}
+# setting experiment to find the best architecture
 k_opt <- c(4,6,8,10)
 p_opt <- c(10,20,30,50)
 gen_opt <- c(25,50,75,100)
@@ -196,7 +169,7 @@ for(i_k in k_opt){
       for(i_f in fm_opt){
         for(i in 1:2){
           n<-n+1
-          t <- system.time(ga <- genetic_algorithm(select(db3,-c('row_id')),i_k,i_p,i_g,i_f))
+          t <- system.time(ga <- genetic_algorithm(select(db2,-c('row_id')),i_k,i_p,i_g,i_f))
           res[n,1] <- i_k
           res[n,2] <- i_p
           res[n,3] <- i_g
@@ -208,62 +181,7 @@ for(i_k in k_opt){
     }
   }
 }
-```
 
-```{r}
+
 df_res <- data.frame(res)
 names(df_res) <- c('centroids','population','generations','mutation_factor','db_index','time')
-head(df_res)
-```
-```{r}
-boxplot(db_index~centroids,data=df_res,outline=F)
-```
-
-```{r}
-boxplot(db_index~population,data=df_res,outline=F)
-```
-
-```{r}
-boxplot(db_index~generations,data=df_res,outline=F)
-```
-
-```{r}
-boxplot(db_index~mutation_factor,data=df_res,outline=F)
-```
-
-```{r}
-sample_vector <- runif(nrow(db2))
-db4 <- db2[sample_vector<0.5,]
-ga <- genetic_algorithm(select(db4,-c('row_id')),4,30,100,0.05)
-
-```
-```{r}
-plot(ga$evolution,xlab='generations',ylab='Davies-Bouldin index')
-```
-
-```{r}
-centroids <- ga$best_subject %>%
-  data.frame()
-names(centroids) <- names(select(db3,-c('row_id')))
-head(centroids)
-```
-
-```{r}
-table(ga$intra$cluster)
-```
-
-```{r}
-positive_vector <- runif(nrow(db4))<=(100/15207)
-negative_vector <- runif(nrow(db4))<=(100/(nrow(db4)-15207))
-db4$cluster <- ga$intra$cluster
-positive_sample <- db4[db4$cluster==1 & positive_vector,c('row_id','cluster')]
-negative_sample <- db4[db4$cluster!=1 & negative_vector,c('row_id','cluster')]
-manual_sample <- rbind(positive_sample,negative_sample) %>%
-  merge(db,all.x=T,by='row_id',sort=F)
-head(manual_sample)
-```
-
-
-
-
-
